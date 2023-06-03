@@ -8,15 +8,20 @@ import modules.db_manager
 При выборе кнопки, сообщение меняется, а в БД юзера записывается значение выбранного языка (пока не реализовано)
 '''
 
-class LangSelector():
-    def __init__(self, parent, pages, limit):
-        self.parent = parent
-        self.current_page = 0
-        self.parent.dp.register_callback_query_handler(self.handle)
-        self.pages = pages # сколько всего страниц
-        self.limit = limit # сколько кнопок на одной странице
 
-    async def create_buttons(self, message, edit_message_id=None):
+class LangSelector():
+    def __init__(self, parent, limit=5):
+        self.parent = parent        
+        self.parent.dp.register_callback_query_handler(self.handle)
+        self.limit = int(limit) # сколько кнопок на одной странице
+
+
+    async def create_buttons(self, message, page=0, edit_message_id=None):
+    	# переменная, отвечающая за текущую страницу
+        self.current_page = page
+        # количество страниц с языками
+        self.pages = await modules.db_manager.db_query(db_name=self.parent.db_name, query=f"SELECT COUNT(*) FROM langs")
+        self.pages = (self.pages[0][0] // self.limit) + (1 if self.pages[0][0] % self.limit > 0 else 0)
         # создаём список кнопок для выбора языка
         offset = self.current_page * self.limit
         result = await modules.db_manager.db_query(db_name=self.parent.db_name, query=f"SELECT name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
@@ -58,7 +63,7 @@ class LangSelector():
                 else:
                     return
             # создаём новый список кнопок для новой страницы
-            await self.create_buttons(call.message, edit_message_id=call.message.message_id)
+            await self.create_buttons(call.message, page=self.current_page, edit_message_id=call.message.message_id)
         # Если была выбрана кнопка смены языка
         elif call.data != "current_page":
             lang = call.data
