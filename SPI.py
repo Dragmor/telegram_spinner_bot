@@ -2,7 +2,7 @@ import telebot
 import sqlite3
 
 # Создание объекта бота и указание токена
-bot = telebot.TeleBot('6148264041:AAEi_qQRI-oHOZHE3ktV4yZ7vlF5CMMcPI4')
+bot = telebot.TeleBot('<YOUR TOKEN HERE>')
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
