@@ -2,6 +2,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from aiogram.dispatcher import FSMContext
 #
 import modules.db_manager
+import modules.chat_manager
 
 '''
 модуль реализует выбор языка, выводя пользователю список кнопок.
@@ -15,9 +16,8 @@ class LangSelector():
         self.parent.dp.register_callback_query_handler(self.handle)
         self.limit = int(limit) # сколько кнопок на одной странице
 
-
-    async def create_buttons(self, message, page=0, edit_message_id=None):
-    	# переменная, отвечающая за текущую страницу
+    async def create_buttons(self, message, page=0, first_launch=True, edit_message_id=None):
+        # переменная, отвечающая за текущую страницу
         self.current_page = page
         # количество страниц с языками
         self.pages = await modules.db_manager.db_query(db_name=self.parent.db_name, query=f"SELECT COUNT(*) FROM langs")
@@ -32,6 +32,7 @@ class LangSelector():
                 callback_data = f"{r[0]}"
                 button = InlineKeyboardButton(text=r[0], callback_data=callback_data)
                 keyboard.add(button)
+
             # добавляем кнопки для переключения страниц
             buttons = []
             buttons.append(InlineKeyboardButton(text="⬅️", callback_data="prev_page"))
@@ -40,11 +41,16 @@ class LangSelector():
             buttons.append(InlineKeyboardButton(text="➡️", callback_data="next_page"))
             # создаём столько рядов в нихнем строке, сколько кнопок в списке buttons
             keyboard.row(*buttons)
+
             # отправляем юзеру меню выбора языка
             if edit_message_id is not None:
                 await self.parent.bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=edit_message_id, reply_markup=keyboard)
             else:
                 await message.answer(text=f"Choose language", reply_markup=keyboard)
+        # проверяем, вызвана этот метод командой, или перелистыванием страницы
+        if first_launch:
+            # удаляем сообщение от юзера с командой
+            await modules.chat_manager.delete_last_msg(self.parent.bot, message)
 
     async def handle(self, call: CallbackQuery, state: FSMContext):
         # обработчик для кнопок выбора языка
@@ -63,7 +69,7 @@ class LangSelector():
                 else:
                     return
             # создаём новый список кнопок для новой страницы
-            await self.create_buttons(call.message, page=self.current_page, edit_message_id=call.message.message_id)
+            await self.create_buttons(call.message, page=self.current_page, first_launch=False, edit_message_id=call.message.message_id)
         # Если была выбрана кнопка смены языка
         elif call.data != "current_page":
             lang = call.data

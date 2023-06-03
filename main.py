@@ -17,9 +17,11 @@ class ChatBot:
         
     async def handle_start(self, message: types.Message):       
         # обработка команды /start
-             
+
+        # удаляем сообщение /start от юзера в чате
+        await modules.chat_manager.delete_last_msg(self.bot, message)
         # выводим кнопки для выбора языка
-        await self.lang_selector.create_buttons(message=message)
+        await self.lang_selector.create_buttons(message=message, first_launch=False)
 
 
 if __name__ == '__main__':
