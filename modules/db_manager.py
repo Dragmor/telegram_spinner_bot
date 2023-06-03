@@ -11,6 +11,7 @@ async def db_query(db_name, query):
         try:
             conn = sqlite3.connect(db_name)
             cursor = conn.cursor()
+            # выполняем SQL-запрос в БД
             cursor.execute(query)
             result = cursor.fetchall()
             cursor.close()
@@ -19,3 +20,4 @@ async def db_query(db_name, query):
         except sqlite3.OperationalError:
             # ждём, пока БД станет доступной
             await asyncio.sleep(0.1)
+            

@@ -19,3 +19,4 @@ import modules.db_manager
 import modules.select_lang
 import modules.get_json_data
 import modules.chat_manager
+import modules.load_commands
