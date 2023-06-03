@@ -1,46 +1,55 @@
-import telebot
+import asyncio
+import logging
+
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Command
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+
 import sqlite3
-import threading
-import time
+
+class LangStates(StatesGroup):
+    lang = State()
 
 class ChatBot:
     '''класс чат-бота'''
     def __init__(self, token, db_name):
-        self.bot = telebot.TeleBot(token)
+        self.bot = Bot(token=token, parse_mode=types.ParseMode.HTML)
+        self.dp = Dispatcher(self.bot, storage=MemoryStorage())
         self.db_name = db_name
         self.register_handlers()
-        self.run()
 
     def register_handlers(self):
         # создаём бинды обработчиков команд
-        self.bot.message_handler(commands=['start'])(lambda msg: threading.Thread(target=self.handle_start, args=(msg,)).start())
+        self.dp.register_message_handler(self.handle_start, commands=['start'])
+        self.dp.register_callback_query_handler(self.handle_set_lang, state=LangStates.lang)
 
-
-    def handle_start(self, message):
+    async def handle_start(self, message: types.Message):
         # запускаем обработку команды /start
-        result = self.db_query(query="SELECT name, iso FROM langs")
+        result = await self.db_query(query="SELECT name, iso FROM langs")  # Add 'await' here
         # проверяем, есть ли извлечённые данные из БД
         if result:
-            keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+            keyboard = InlineKeyboardMarkup(row_width=1)
             for r in result:
                 callback_data = f"{r[0]}"
-                button = telebot.types.InlineKeyboardButton(text=r[0], callback_data=callback_data)
-                # регистрируем обработчик для каждой кнопки
-                self.bot.callback_query_handler(func=lambda call, selected_lang=r[0]: call.data == f"{selected_lang}")(lambda call, selected_lang=r[1]: self.handle_set_lang(call, selected_lang))
+                button = InlineKeyboardButton(text=r[0], callback_data=callback_data)
                 keyboard.add(button)
             # отправляем юзеру меню выбора языка
-            self.bot.send_message(chat_id=message.chat.id, text="Choose language:", reply_markup=keyboard)
+            await message.answer(text="Choose language:", reply_markup=keyboard)
+            await LangStates.lang.set()
 
-    def handle_set_lang(self, call, data):
+    async def handle_set_lang(self, call: CallbackQuery, state: FSMContext):
         # обработчик для кнопок выбора языка
         # выводим сообщение, какой язык выбран
-        self.bot.answer_callback_query(callback_query_id=call.id, text=f"You selected {call.data}")
-            
-    def run(self):
-        # запускаем вечный цикл обработки сообщений
-        self.bot.polling(none_stop=True)
+        lang = call.data
+        # тут выводится инфо о том, какой язык был выбран (нужно, чтобы текст был на том языке, который выбран)
+        await call.answer(f"You selected {lang}")
+        await self.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+        await state.finish()
 
-    def db_query(self, query):
+    async def db_query(self, query):
         # метод подключается к БД, выполняет запрос, и возвращает кортеж извлечённых данных
         # делаем очередь для обращения к БД из потоков
         while True:
@@ -54,9 +63,10 @@ class ChatBot:
                 return result
             except sqlite3.OperationalError:
                 # ждём, пока БД станет доступной
-                time.sleep(0.1)
+                await asyncio.sleep(0.1)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     SpinnerBot = ChatBot(token='6108544466:AAF012RlMXPAXTUc_EKm05FSqBekLigLNnw', db_name="./spinner.db")
-    SpinnerBot.run()
+    asyncio.run(SpinnerBot.dp.start_polling())
