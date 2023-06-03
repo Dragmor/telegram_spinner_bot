@@ -9,7 +9,7 @@ def handle_start(message):
     # Создание подключения к базе данных
     conn = sqlite3.connect('F:/GREOR/prod/py/chat/spinner.db')
     
-    # Получение списка языков из таблицы langs в базе данн
+    # Получение списка языков из таблицы langs в базе данных
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM langs")
     result = cursor.fetchall()
