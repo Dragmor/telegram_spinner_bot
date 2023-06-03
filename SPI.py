@@ -4,6 +4,7 @@ import threading
 import time
 
 class ChatBot:
+    '''класс чат-бота'''
     def __init__(self, token, db_name):
         self.bot = telebot.TeleBot(token)
         self.db_name = db_name
@@ -17,8 +18,8 @@ class ChatBot:
 
     def handle_start(self, message):
         # запускаем обработку команды /start
-        result = self.db_query(query="SELECT name, tag FROM langs")
-
+        result = self.db_query(query="SELECT name, iso FROM langs")
+        # проверяем, есть ли извлечённые данные из БД
         if result:
             keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
             for r in result:
