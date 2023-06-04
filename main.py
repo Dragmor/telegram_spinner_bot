@@ -5,7 +5,8 @@ class ChatBot:
     def __init__(self, token: str, db_name: str) -> None:
         self.bot = Bot(token=token, parse_mode=types.ParseMode.HTML)
         self.dp = Dispatcher(self.bot, storage=MemoryStorage())
-        self.db_name = db_name # название БД
+        # self.db_name = db_name # название БД
+        self.db_manager = modules.db_manager.DataBaseManager(db_name)
         
         # объект кнопок выбора языка
         self.lang_selector = modules.select_lang.LangSelector(parent=self, limit=modules.get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))

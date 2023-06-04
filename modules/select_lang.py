@@ -1,7 +1,6 @@
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.dispatcher import FSMContext
 #
-import modules.db_manager
 import modules.chat_manager
 
 '''
@@ -23,7 +22,7 @@ class LangSelector():
             await self.get_pages_count()        
         # создаём список кнопок для выбора языка
         offset = current_page * self.limit
-        result = await modules.db_manager.db_query(db_name=self.parent.db_name, query=f"SELECT name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
+        result = await self.parent.db_manager.get_data(query=f"SELECT name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
         # проверяем, есть ли извлечённые данные из БД
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)
@@ -84,11 +83,11 @@ class LangSelector():
         elif call.data != "current_page":
             lang = call.data
             # тут выводится инфо о том, какой язык был выбран (нужно, чтобы текст был на том языке, который выбран)
-            await call.answer(f"You selected {lang}")
+            await call.answer(f"{lang}")
             await self.parent.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             await state.finish()
 
     async def get_pages_count(self) -> None:
         #метод задаёт кол-во страниц с языками
-        self.pages = await modules.db_manager.db_query(db_name=self.parent.db_name, query=f"SELECT COUNT(*) FROM langs")
+        self.pages = await self.parent.db_manager.get_data(query=f"SELECT COUNT(*) FROM langs")
         self.pages = (self.pages[0][0] // self.limit) + (1 if self.pages[0][0] % self.limit > 0 else 0)
