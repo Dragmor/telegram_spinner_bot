@@ -3,7 +3,7 @@ from aiogram import types
 метод загружает в бота команды из файла
 '''
 
-async def load_commands(bot):
+async def load_commands(bot) -> None:
     with open("./settings/commands.txt", 'r') as f:
         data = f.read()
     data = data.split("\n")

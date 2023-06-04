@@ -2,7 +2,7 @@ from modules.imports import *
 
 class ChatBot:
     '''класс чат-бота'''
-    def __init__(self, token, db_name):
+    def __init__(self, token: str, db_name: str) -> None:
         self.bot = Bot(token=token, parse_mode=types.ParseMode.HTML)
         self.dp = Dispatcher(self.bot, storage=MemoryStorage())
         self.db_name = db_name # название БД
@@ -16,7 +16,7 @@ class ChatBot:
         self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['set_lang'])
         
-    async def handle_start(self, message: types.Message):       
+    async def handle_start(self, message: types.Message) -> None:       
         # обработка команды /start
         
         # загружаю команды в меню бота из файла

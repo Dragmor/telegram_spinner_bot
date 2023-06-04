@@ -3,7 +3,7 @@ import json
 модуль для парсинга .json-файлов
 принимает на вход название json-файла, и имя , по которому будет извлечено значение
 '''
-def get_data(fname, data):
+def get_data(fname: str, data: str) -> str:
     # Открываем файл token.json и читаем его содержимое в переменную
     with open(fname, 'r') as f:
         file_data = f.read()
