@@ -22,13 +22,15 @@ class LangSelector():
             await self.get_pages_count()        
         # создаём список кнопок для выбора языка
         offset = current_page * self.limit
-        result = await self.parent.db_manager.get_data(query=f"SELECT name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
+        # извлекаем из БД флаг, название языка и ISO
+        result = await self.parent.db_manager.get_data(query=f"SELECT flag, name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
         # проверяем, есть ли извлечённые данные из БД
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)
-            for r in result:
-                callback_data = f"{r[0]}"
-                button = InlineKeyboardButton(text=r[0], callback_data=callback_data)
+            for flag, name, iso in result:
+                callback_data = name
+                # присваиваем кнопке текст: флаг и название языка
+                button = InlineKeyboardButton(text=f"{flag} {name}", callback_data=callback_data)
                 keyboard.add(button)
 
             # добавляем кнопки для переключения страниц

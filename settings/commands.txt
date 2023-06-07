@@ -1,2 +1,0 @@
-start - start bot
-set_lang - choose language

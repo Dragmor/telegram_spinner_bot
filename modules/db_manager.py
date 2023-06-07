@@ -1,12 +1,13 @@
-import sqlite3
+import mysql.connector
 
 '''
 модуль для работы с БД (извлечение данных, внесение записей, редактирование и т.д.)
 Класс реализует управление БД
 '''
 class DataBaseManager():
-    def __init__(self, db_name):
-        self.connect = sqlite3.connect(db_name)
+    def __init__(self, db_conf):
+        # подключаюсь к БД
+        self.connect = mysql.connector.connect(**db_conf)
 
     async def get_data(self, query: str) -> list[(tuple,)]:
         # метод подключается к БД, выполняет запрос, и возвращает кортеж извлечённых данных

@@ -16,7 +16,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 
 # самописные модули
 import modules.db_manager
-import modules.select_lang
 import modules.get_json_data
 import modules.chat_manager
-import modules.load_commands
+import modules.user_commands.settings.select_lang
+import modules.user_commands.settings.load_commands
