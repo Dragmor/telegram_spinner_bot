@@ -8,7 +8,7 @@ import modules.chat_manager
 При выборе кнопки, сообщение меняется, а в БД юзера записывается значение выбранного языка (пока не реализовано)
 '''
 
-class LangSelector():
+class GenderSelector():
     def __init__(self, parent, limit: int) -> None:
         self.parent = parent        
         self.parent.dp.register_callback_query_handler(self.handle)
@@ -28,7 +28,7 @@ class LangSelector():
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)
             for flag, name, iso in result:
-                callback_data = iso
+                callback_data = name
                 # присваиваем кнопке текст: флаг и название языка
                 button = InlineKeyboardButton(text=f"{flag} {name}", callback_data=callback_data)
                 keyboard.add(button)
@@ -60,7 +60,7 @@ class LangSelector():
 
     async def handle(self, call: CallbackQuery, state: FSMContext) -> None:
         # обработчик для кнопок выбора языка
-        
+
         # если метод был вызван впервые, то отпределяю кол-во страниц
         if self.pages == None:
             await self.get_pages_count()
@@ -85,14 +85,8 @@ class LangSelector():
         elif call.data != "current_page":
             lang = call.data
             # тут выводится инфо о том, какой язык был выбран (нужно, чтобы текст был на том языке, который выбран)
-            # отправляем уведомление о выбранном языке
-            # await call.answer(f"{lang}")
-            # меняем текст сообщения
-            # await self.parent.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
-            # вношу iso выбранного языка в БД юзеру
-            await self.parent.db_manager.write_data(query=f"UPDATE users SET iso = '{call.data}' WHERE ids = {call['from']['id']}")
-            # удаляем сообщение с кнопками после выбора языка
-            await self.parent.bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            await call.answer(f"{lang}")
+            await self.parent.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             await state.finish()
 
     async def get_pages_count(self) -> None:

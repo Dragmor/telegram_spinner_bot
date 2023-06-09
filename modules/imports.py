@@ -19,5 +19,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 import modules.db_manager
 import modules.get_json_data
 import modules.chat_manager
+import modules.user_commands.settings.check_user
 import modules.user_commands.settings.select_lang
+import modules.user_commands.settings.select_gender
 import modules.user_commands.settings.load_commands

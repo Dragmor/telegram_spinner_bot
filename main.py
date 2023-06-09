@@ -9,22 +9,32 @@ class ChatBot:
         
         # объект кнопок выбора языка
         self.lang_selector = modules.user_commands.settings.select_lang.LangSelector(parent=self, limit=modules.get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))
+        # объект кнопок выбора пола
+        # self.gender_selector = modules.user_commands.settings.select_gender.GenderSelector(parent=self)
         self.register_handlers() # биндим команды
 
     def register_handlers(self):
         # создаём бинды обработчиков команд
         self.dp.register_message_handler(self.handle_start, commands=['start'])
-        self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['set_lang'])
+        self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         
     async def handle_start(self, message: types.Message) -> None:       
         # обработка команды /start
         
-        # загружаю команды в меню бота из файла
-        await modules.user_commands.settings.load_commands.load_commands(parent=self, bot=self.bot)
-        # удаляем сообщение /start от юзера в чате
-        await modules.chat_manager.delete_last_msg(self.bot, message)
-        # выводим кнопки для выбора языка
-        await self.lang_selector.create_buttons(message=message, first_launch=False)
+        # проверяем, есть-ли данный юзер в БД. Если нет - добавляем
+        if await modules.user_commands.settings.check_user.check(db_manager=self.db_manager, username=message['from']['username'], user_id=message['from']['id']) == False:
+            # если это новый юзер, которого нет в БД, то вызываю методы для заполнения данных юзером
+            # загружаю команды в меню бота из файла
+            await modules.user_commands.settings.load_commands.load_commands(parent=self, bot=self.bot)
+            # удаляем сообщение /start от юзера в чате
+            await modules.chat_manager.delete_last_msg(self.bot, message)
+            # выводим кнопки для выбора языка
+            await self.lang_selector.create_buttons(message=message, first_launch=False)
+            # после этого выводим кнопки выбора пола
+        else:
+            # если пользователь не новый
+            pass
+
 
 
 if __name__ == '__main__':
