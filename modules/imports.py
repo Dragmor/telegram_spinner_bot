@@ -5,6 +5,7 @@
 
 import asyncio # многопоточность
 import logging # модуль для отображения логов в консоли
+import os # для извлечения из переменных окружения токена и других переменных
 
 # модули для телеги
 from aiogram import Bot, Dispatcher, types

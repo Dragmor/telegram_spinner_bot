@@ -29,8 +29,36 @@ class ChatBot:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO) # выводит некоторые логи в консоль
-    # извлекаем из json-файла данные для подключения к БД mysql
-    db_conf = modules.get_json_data.get_data(fname="./settings/mysql_access_data.json", data=["user","password","host","port","database"])
+    # извлекаем из переменных окружения значения для коннеката к БД
+    db_conf = {"user": os.getenv('USER'),
+        "password": os.getenv('PASSWORD'),
+        "host": os.getenv('HOST'),
+        "port": os.getenv('PORT'),
+        "database": os.getenv('DATABASE')}
     # создаём объект бота
-    SpinnerBot = ChatBot(token=modules.get_json_data.get_data(fname="./settings/token.json", data="telegram_bot_token"), db_conf=db_conf)
+    SpinnerBot = ChatBot(token=os.getenv('TOKEN'), db_conf=db_conf)
     asyncio.run(SpinnerBot.dp.start_polling())
+
+
+
+"""
+# Изменение аватарки бота
+with open('new_avatar.jpg', 'rb') as f:
+    await bot.set_avatar(photo=f)
+
+# Изменение описания бота
+await bot.set_my_commands(commands=[
+    types.BotCommand(command='start', description='Start the bot'),
+    types.BotCommand(command='help', description='Get help')
+])
+
+# Изменение логотипа бота
+with open('new_logo.jpg', 'rb') as f:
+    await bot.set_photo(photo=f)
+
+# Изменение имени бота
+await bot.set_name(name='New Bot Name')
+
+# изменяет описание профиля бота.
+set_chat_description(chat_id: Union[int, str], description: str)
+"""
