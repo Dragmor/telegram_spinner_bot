@@ -2,16 +2,20 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from aiogram.dispatcher import FSMContext
 #
 import modules.chat_manager
+import modules.user_commands.settings.check_user
+import modules.user_commands.settings.load_commands
 
 '''
 модуль реализует выбор языка, выводя пользователю список кнопок.
-При выборе кнопки, сообщение меняется, а в БД юзера записывается значение выбранного языка (пока не реализовано)
+При выборе кнопки, сообщение меняется, а в БД юзера записывается значение выбранного языка
 '''
 
 class LangSelector():
     def __init__(self, parent, limit: int) -> None:
-        self.parent = parent        
-        self.parent.dp.register_callback_query_handler(self.handle)
+        self.parent = parent     
+        self.title = "💬❔" # заголовок сообщения с кнопками выбора
+        # привязываю вызов обработчика на 
+        self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("lang"))   
         self.limit = int(limit) # сколько кнопок на одной странице
         self.pages = None
 
@@ -28,7 +32,7 @@ class LangSelector():
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)
             for flag, name, iso in result:
-                callback_data = iso
+                callback_data = f"lang=={iso}"
                 # присваиваем кнопке текст: флаг и название языка
                 button = InlineKeyboardButton(text=f"{flag} {name}", callback_data=callback_data)
                 keyboard.add(button)
@@ -52,7 +56,7 @@ class LangSelector():
                 except:
                     await self.parent.bot.delete_message(chat_id=message.chat.id, message_id=edit_message_id)
             else:
-                await message.answer(text=f"Choose language", reply_markup=keyboard)
+                await message.answer(text=self.title, reply_markup=keyboard)
         # проверяем, вызвана этот метод командой, или перелистыванием страницы
         if first_launch:
             # удаляем сообщение от юзера с командой
@@ -60,7 +64,7 @@ class LangSelector():
 
     async def handle(self, call: CallbackQuery, state: FSMContext) -> None:
         # обработчик для кнопок выбора языка
-        
+
         # если метод был вызван впервые, то отпределяю кол-во страниц
         if self.pages == None:
             await self.get_pages_count()
@@ -83,17 +87,24 @@ class LangSelector():
             await self.create_buttons(message=call.message, page=current_page, first_launch=False, edit_message_id=call.message.message_id)
         # Если была выбрана кнопка смены языка
         elif call.data != "current_page":
-            lang = call.data
+            lang = call.data.split("==")[-1]
             # тут выводится инфо о том, какой язык был выбран (нужно, чтобы текст был на том языке, который выбран)
             # отправляем уведомление о выбранном языке
             # await call.answer(f"{lang}")
             # меняем текст сообщения
             # await self.parent.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             # вношу iso выбранного языка в БД юзеру
-            await self.parent.db_manager.write_data(query=f"UPDATE users SET iso = '{call.data}' WHERE ids = {call['from']['id']}")
+            await self.parent.db_manager.write_data(query=f"UPDATE users SET iso = '{lang}' WHERE ids = {call['from']['id']}")
             # удаляем сообщение с кнопками после выбора языка
             await self.parent.bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             await state.finish()
+
+            # загружаю команды в меню бота из БД на выбранном языке
+            await modules.user_commands.settings.load_commands.load_commands(parent=self.parent, user_id=call['message']['chat']['id'])
+            
+            # проверяем, какие поля ещё не заполнил юзер
+            await modules.user_commands.settings.check_user.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
+            
 
     async def get_pages_count(self) -> None:
         #метод задаёт кол-во страниц с языками
