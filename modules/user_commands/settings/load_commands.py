@@ -6,14 +6,12 @@ from aiogram import types
 '''
 
 async def load_commands(parent, user_id) -> None:
-    temp = await parent.db_manager.get_data(query=f"SELECT iso, role FROM users WHERE ids = {user_id}")
-    lang = temp[0][0]
-    role = temp[0][1]
-    # если язык не был выбран юзером, то выводим описание на английском
-    if lang == "0":
-        lang = "eng"
-    # получаю из БД все команды
-    data = await parent.db_manager.get_data(query=f"SELECT command, {lang} FROM commands WHERE role >= {role}")
+    # # получаю из БД все команды (фильтруя по ISO и ROLE юзера)
+    data = await parent.db_manager.get_data(query=f'''SELECT c.command, c.description 
+                                                     FROM commands AS c 
+                                                     JOIN users AS u ON c.role >= u.role
+                                                     AND c.iso = u.iso 
+                                                     WHERE u.ids = {user_id}''')
     # Список пользовательских команд
     commands = []
     for command in data:

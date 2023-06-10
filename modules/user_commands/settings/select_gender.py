@@ -17,16 +17,11 @@ class GenderSelector():
     async def create_buttons(self, message) -> None:
         # создаём список кнопок для выбора языка
 
-        # извлекаем iso юзера
-        iso = await self.parent.db_manager.get_data(query=f"SELECT iso FROM users WHERE ids = {message['chat']['id']}")
-        # если язык ещё не был указан, то ставлю eng
-        if iso == None or iso[0][0] == "0":
-            iso = "eng"
-        # если же были извлечены данные, то
-        else:
-            iso = iso[0][0]
-        # извлекаем из БД название гендера на языке ISO
-        result = await self.parent.db_manager.get_data(query=f"SELECT flag, name, gender FROM genders WHERE iso = '{iso}'")
+        # получаем iso юзера и извлекаем название гендера на этом языке
+        result = await self.parent.db_manager.get_data(query=f'''SELECT g.flag, g.name, g.gender 
+                                                                 FROM genders AS g 
+                                                                 JOIN users AS u ON g.iso = u.iso 
+                                                                 WHERE u.ids = {message['chat']['id']}''')
         # проверяем, есть ли извлечённые данные из БД
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)

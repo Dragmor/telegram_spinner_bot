@@ -26,7 +26,7 @@ class ChatBot:
         # удаляем сообщение /start от юзера в чате
         await modules.chat_manager.delete_last_msg(self.bot, message)
         # проверяем, есть-ли данный юзер в БД. Если нет - добавляем
-        await modules.user_commands.settings.check_user.check_user(db_manager=self.db_manager, username=message['from']['username'], user_id=message['from']['id'])
+        # await modules.user_commands.settings.check_user.check_user(db_manager=self.db_manager, username=message['from']['username'], user_id=message['from']['id'])
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
         await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
         # загружаю команды в меню бота из БД на выбранном юзером языке
