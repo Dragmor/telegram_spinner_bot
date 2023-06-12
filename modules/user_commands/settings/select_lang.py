@@ -1,7 +1,6 @@
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.dispatcher import FSMContext
 #
-import modules.chat_manager
 import modules.user_commands.settings.check_user
 import modules.user_commands.settings.load_commands
 
@@ -20,6 +19,11 @@ class LangSelector():
         self.pages = None
 
     async def create_buttons(self, message, page=0, first_launch=True, edit_message_id=None) -> None:
+        # проверяем, вызвана этот метод командой, или перелистыванием страницы
+        if first_launch:
+            # удаляем сообщение от юзера с командой
+            await message.delete()
+            
         # переменная, отвечающая за текущую страницу
         current_page = page
         if self.pages == None:
@@ -57,10 +61,7 @@ class LangSelector():
                     await self.parent.bot.delete_message(chat_id=message.chat.id, message_id=edit_message_id)
             else:
                 await message.answer(text=self.title, reply_markup=keyboard)
-        # проверяем, вызвана этот метод командой, или перелистыванием страницы
-        if first_launch:
-            # удаляем сообщение от юзера с командой
-            await modules.chat_manager.delete_last_msg(self.parent.bot, message)
+
 
     async def handle(self, call: CallbackQuery, state: FSMContext) -> None:
         # обработчик для кнопок выбора языка
@@ -96,7 +97,7 @@ class LangSelector():
             # вношу iso выбранного языка в БД юзеру
             await self.parent.db_manager.write_data(query=f"UPDATE users SET iso = '{lang}' WHERE ids = {call['from']['id']}")
             # удаляем сообщение с кнопками после выбора языка
-            await self.parent.bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            await call.message.delete()
             await state.finish()
 
             # загружаю команды в меню бота из БД на выбранном языке

@@ -6,6 +6,7 @@
 import asyncio # многопоточность
 import logging # модуль для отображения логов в консоли
 import os # для извлечения из переменных окружения токена и других переменных
+import datetime # для работы с текущей датой (например, для записи даты регистрации юзера)
 
 # модули для телеги
 from aiogram import Bot, Dispatcher, types
@@ -18,7 +19,6 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 # самописные модули
 import modules.db_manager
 import modules.get_json_data
-import modules.chat_manager
 import modules.user_commands.settings.check_user
 import modules.user_commands.settings.select_lang
 import modules.user_commands.settings.select_gender

@@ -1,7 +1,7 @@
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.dispatcher import FSMContext
 #
-import modules.chat_manager
+import modules.user_commands.settings.check_user
 
 '''
 модуль реализует выбор пола, выводя пользователю список кнопок.
@@ -17,6 +17,9 @@ class GenderSelector():
     async def create_buttons(self, message) -> None:
         # создаём список кнопок для выбора языка
 
+        # удаляем сообщение от юзера с командой
+        await message.delete()
+        
         # получаем iso юзера и извлекаем название гендера на этом языке
         result = await self.parent.db_manager.get_data(query=f'''SELECT g.flag, g.name, g.gender 
                                                                  FROM genders AS g 
@@ -34,6 +37,8 @@ class GenderSelector():
             # отправляем юзеру меню выбора пола
             await message.answer(text=self.title, reply_markup=keyboard)
 
+            
+
     async def handle(self, call: CallbackQuery, state: FSMContext) -> None:
         # обработчик для кнопок выбора пола
 
@@ -42,8 +47,7 @@ class GenderSelector():
         # вношу выбранный пол в БД
         await self.parent.db_manager.write_data(query=f"UPDATE users SET gender = '{gender}' WHERE ids = {call['from']['id']}")
         # удаляем меню выбора пола
-        await self.parent.bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        await call.message.delete()
         await state.finish()
-        
         # проверяем, какие поля ещё не заполнил юзер
         await modules.user_commands.settings.check_user.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)

@@ -11,10 +11,10 @@ class DataBaseManager():
 
     async def get_data(self, query: str) -> list[(tuple,)]:
         # метод подключается к БД, выполняет запрос, и возвращает кортеж извлечённых данных
-        cursor = self.connect.cursor() 
-        cursor.execute(query) # выполняем SQL-запрос в БД
-        result = cursor.fetchall() # создаём отдельный курсор в каждом вызове метода
-        cursor.close()
+        with self.connect.cursor() as cursor:
+            cursor.execute(query) # выполняем SQL-запрос в БД
+            result = cursor.fetchall() # создаём отдельный курсор в каждом вызове метода
+            
         # проверяем, были ли извлечены какие-либо данные
         if len(result) == 0: # если нет, то возвращаем None
             return None
@@ -22,9 +22,9 @@ class DataBaseManager():
 
     async def write_data(self, query: str):
         # метод записывает в БД данные, переданные запросом SQL
-        cursor = self.connect.cursor() 
-        cursor.execute(query) # выполняем SQL-запрос в БД
-        cursor.close()
+        # используем менеджер контекста, чтобы не забыть закрыть курсор
+        with self.connect.cursor() as cursor:
+            cursor.execute(query) # выполняем SQL-запрос в БД
         self.connect.commit() # сохраняем изменения в БД
                 
     def close(self):

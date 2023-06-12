@@ -16,35 +16,41 @@ class ChatBot:
     def register_handlers(self):
         # создаём бинды обработчиков команд
         
-        self.dp.register_message_handler(self.handle_start, commands=['star'])
+        self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
         
-    async def handle_start(self, message: types.Message) -> None:       
+    async def handle_start(self, message: types.Message) -> None:
         # обработка команды /start
         
         # удаляем сообщение /start от юзера в чате
-        await modules.chat_manager.delete_last_msg(self.bot, message)
-        # проверяем, есть-ли данный юзер в БД. Если нет - добавляем
-        # await modules.user_commands.settings.check_user.check_user(db_manager=self.db_manager, username=message['from']['username'], user_id=message['from']['id'])
+        # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
+        await message.delete()
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
+        await asyncio.create_task(modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message))
         # загружаю команды в меню бота из БД на выбранном юзером языке
-        await modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id'])
+        await asyncio.create_task(modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id']))
         
 
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO) # выводит некоторые логи в консоль
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)# выводит некоторые логи в консоль
     # извлекаем из переменных окружения значения для коннеката к БД
-    db_conf = {"user": os.getenv('USER'),
+    db_conf = {
+        "user": os.getenv('USER'),
         "password": os.getenv('PASSWORD'),
         "host": os.getenv('HOST'),
         "port": os.getenv('PORT'),
-        "database": os.getenv('DATABASE')}
+        "database": os.getenv('DATABASE')
+    }
     # создаём объект бота
     SpinnerBot = ChatBot(token=os.getenv('TOKEN'), db_conf=db_conf)
-    asyncio.run(SpinnerBot.dp.start_polling())
+    loop = asyncio.get_event_loop()
+    loop.create_task(SpinnerBot.dp.start_polling())
+    # запускаем бесконечный цикл событий
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        loop.stop()
 
 
 
@@ -68,4 +74,8 @@ await bot.set_name(name='New Bot Name')
 
 # изменяет описание профиля бота.
 set_chat_description(chat_id: Union[int, str], description: str)
+
+
+# await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id) # удаляет любое сообщение по его id и id чата
+# await message.delete() # удаляет сообщение message
 """

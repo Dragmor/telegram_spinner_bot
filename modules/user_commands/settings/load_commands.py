@@ -6,7 +6,7 @@ from aiogram import types
 '''
 
 async def load_commands(parent, user_id) -> None:
-    # # получаю из БД все команды (фильтруя по ISO и ROLE юзера)
+    # получаю из БД все команды (фильтруя по ISO и ROLE юзера)
     data = await parent.db_manager.get_data(query=f'''SELECT c.command, c.description 
                                                      FROM commands AS c 
                                                      JOIN users AS u ON c.role >= u.role
