@@ -18,9 +18,9 @@ class LangSelector():
         self.limit = int(limit) # сколько кнопок на одной странице
         self.pages = None
 
-    async def create_buttons(self, message, page=0, first_launch=True, edit_message_id=None) -> None:
-        # проверяем, вызвана этот метод командой, или перелистыванием страницы
-        if first_launch:
+    async def create_buttons(self, message, page=0, command_launch=True, edit_message_id=None) -> None:
+        # проверяем, вызвана этот метод командой /, или перелистыванием страницы
+        if command_launch:
             # удаляем сообщение от юзера с командой
             await message.delete()
             
@@ -108,6 +108,7 @@ class LangSelector():
             
 
     async def get_pages_count(self) -> None:
-        #метод задаёт кол-во страниц с языками
+        # метод задаёт кол-во страниц с языками
         self.pages = await self.parent.db_manager.get_data(query=f"SELECT COUNT(*) FROM langs")
+        # определяем, сколько языков есть в БД, и определяем, сколько страниц должно быть (для перелистывания)
         self.pages = (self.pages[0][0] // self.limit) + (1 if self.pages[0][0] % self.limit > 0 else 0)

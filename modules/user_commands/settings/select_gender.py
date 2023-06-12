@@ -14,11 +14,13 @@ class GenderSelector():
         self.title = "👨❓👱‍♀️" # заголовок сообщения с кнопками 
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("gender"))  
 
-    async def create_buttons(self, message) -> None:
-        # создаём список кнопок для выбора языка
+    async def create_buttons(self, message, command_launch=True) -> None:
+        # создаём список кнопок для выбора языка (если command_launch=True, то вызов был по команде юзера)
 
-        # удаляем сообщение от юзера с командой
-        await message.delete()
+        #если этот метод вызван командой /, то удаляем сообщение с этой командой
+        if command_launch:
+            # удаляем сообщение от юзера с командой
+            await message.delete()
         
         # получаем iso юзера и извлекаем название гендера на этом языке
         result = await self.parent.db_manager.get_data(query=f'''SELECT g.flag, g.name, g.gender 

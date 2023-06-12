@@ -13,12 +13,22 @@ class ChatBot:
         self.gender_selector = modules.user_commands.settings.select_gender.GenderSelector(parent=self)
         self.register_handlers() # биндим команды
 
+    async def on_startup(self, dp):
+        '''
+        метод запускается при старте бота. Тут прописываем важные для работы бота
+        события (подключение к БД и т.д.), которые должны произойти сразу после старта
+        '''
+        # подключаемся к БД
+        await self.db_manager.connect()
+
+
     def register_handlers(self):
         # создаём бинды обработчиков команд
         
         self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
+        self.dp.register_message_handler(self.echo)
         
     async def handle_start(self, message: types.Message) -> None:
         # обработка команды /start
@@ -27,10 +37,17 @@ class ChatBot:
         # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
         await message.delete()
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        await asyncio.create_task(modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message))
+        await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
         # загружаю команды в меню бота из БД на выбранном юзером языке
-        await asyncio.create_task(modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id']))
+        await modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id'])
         
+
+    async def echo(self, message: types.Message):
+        # тестовый метод, который обрабатывает все сообщения, которые не были обработаны другими хендлерами
+
+        # отвечаю на сообщение юзера эхо-сообщением
+        await message.reply(text=message.text)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)# выводит некоторые логи в консоль
@@ -39,18 +56,13 @@ if __name__ == "__main__":
         "user": os.getenv('USER'),
         "password": os.getenv('PASSWORD'),
         "host": os.getenv('HOST'),
-        "port": os.getenv('PORT'),
-        "database": os.getenv('DATABASE')
+        "port": int(os.getenv('PORT')),
+        "db": os.getenv('DATABASE')
     }
     # создаём объект бота
     SpinnerBot = ChatBot(token=os.getenv('TOKEN'), db_conf=db_conf)
-    loop = asyncio.get_event_loop()
-    loop.create_task(SpinnerBot.dp.start_polling())
-    # запускаем бесконечный цикл событий
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        loop.stop()
+    # запускаем диспетчер
+    executor.start_polling(SpinnerBot.dp, skip_updates=False, on_startup=SpinnerBot.on_startup)
 
 
 
