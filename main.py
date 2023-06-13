@@ -1,34 +1,47 @@
 from modules.imports import *
 
+
 class ChatBot:
     '''класс чат-бота'''
     def __init__(self, token: str, db_conf: str) -> None:
         self.bot = Bot(token=token, parse_mode=types.ParseMode.HTML)
         self.dp = Dispatcher(self.bot, storage=MemoryStorage())
         self.db_manager = modules.db_manager.DataBaseManager(db_conf)
-        
+
         # объект кнопок выбора языка
         self.lang_selector = modules.user_commands.settings.select_lang.LangSelector(parent=self, limit=modules.get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))
         # объект кнопок выбора пола
         self.gender_selector = modules.user_commands.settings.select_gender.GenderSelector(parent=self)
         self.register_handlers() # биндим команды
 
+
     async def on_startup(self, dp):
         '''
         метод запускается при старте бота. Тут прописываем важные для работы бота
-        события (подключение к БД и т.д.), которые должны произойти сразу после старта
+        события (подключение к БД, включение логирования и т.д.), которые должны произойти сразу после старта
         '''
         # подключаемся к БД
         await self.db_manager.connect()
 
+        # если был передан параметр -logging, то включаем логирование
+        if "-logging" not in sys.argv:
+            # удаляю логгер
+            logger.remove()
+        # если же параметр был передан, то
+        else:
+            # задаём файл для логов (rotation - ограничение размера лога, retention - количество файлов ротации)
+            logger.add(sink="output.log", enqueue=True, level="INFO", diagnose=True, backtrace=True, rotation="10 MB", retention=1)
+
+        # записываем лог
+        logger.opt().success("Bot started!")
+
 
     def register_handlers(self):
         # создаём бинды обработчиков команд
-        
         self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
-        self.dp.register_message_handler(self.echo)
+        self.dp.register_message_handler(self.echo) # получает ВСЕ сообщения, не уловленные предыдущими хендлерами
         
     async def handle_start(self, message: types.Message) -> None:
         # обработка команды /start
@@ -50,7 +63,7 @@ class ChatBot:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)# выводит некоторые логи в консоль
+
     # извлекаем из переменных окружения значения для коннеката к БД
     db_conf = {
         "user": os.getenv('USER'),
@@ -67,6 +80,15 @@ if __name__ == "__main__":
 
 
 """
+Logger method
+logger.trace()
+logger.debug()
+logger.info()
+logger.success()
+logger.warning()
+logger.error()
+logger.critical()
+
 # Изменение аватарки бота
 with open('new_avatar.jpg', 'rb') as f:
     await bot.set_avatar(photo=f)

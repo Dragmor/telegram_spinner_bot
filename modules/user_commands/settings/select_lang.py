@@ -13,7 +13,7 @@ class LangSelector():
     def __init__(self, parent, limit: int) -> None:
         self.parent = parent     
         self.title = "💬❔" # заголовок сообщения с кнопками выбора
-        # привязываю вызов обработчика на 
+        # привязываю вызов обработчика 
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("lang"))   
         self.limit = int(limit) # сколько кнопок на одной странице
         self.pages = None
