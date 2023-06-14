@@ -1,7 +1,8 @@
 Установка зависимостей
 
 Для установки всех необходимых зависимостей из файла requirements.txt используйте команду: 
-pip install -r requirements.txt
+
+    pip install -r requirements.txt
 
 
 Запуск бота
