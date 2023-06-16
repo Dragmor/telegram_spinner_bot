@@ -1,37 +1,46 @@
+from modules.imports import *
+
 """
-модуль реализует класс для асинхронного ведения логов.
+для асинхронного ведения логов.
 чтобы писать логи в файл, нужно перенаправить поток вывода в ОС
 в файл
 """
 
-import datetime
-import aioconsole # асинхронный вывод текста в консоль
+async def write_to_log(logging: bool =True, module_name: str ="", func_name: str ="", level: str ="INFO", log_text: str =""):
+    '''
+    функция асинхронного логирования. Для записи логов в файл, нужно запускать бота
+    с перенаправлением вывода в файл. Принимает параметры:
 
-class Logger():
-    def __init__(self, logging: bool = True):
-        # logging - флаг, отвечающий, будет-ли вестить логирование или нет
-        self.logging = logging
+    logging - флаг, отвечающий, будет-ли вестить логирование или нет
+    module_name - имя модуля, в котором было вызвано логирование
+    func_name - функция, из которой было вызвано логирование
+    level - уровень лога (INFO, ERROR, DEBUG, WARNING, CRITICAL)
+    log_text - текст, который будет записан в строке лога
+    '''
 
-    async def write_to_log(self, module_name=__name__, func_name="", level: str ="INFO", log_text: str =""):
-        '''
-        функция асинхронного логирования. Для записи логов в файл, нужно запускать бота
-        с перенаправлением вывода в файл. Принимает параметры:
-        module_name - имя модуля, в котором было вызвано логирование
-        func_name - функция, из которой было вызвано логирование
-        level - уровень лога (INFO, ERROR, DEBUG, WARNING, CRITICAL)
-        log_text - текст, который будет записан в строке лога
-        '''
+    # если флаг не активирован, то не логируем
+    if not logging:
+        return None
 
-        # если флаг не активирован, то не логируем
-        if not self.logging:
-            return None
+    # формируем строку уровня определённой длины
+    level = level+" "*(8-len(level))
 
-        # формируем строку уровня определённой длины
-        level = level+" "*(8-len(level))
+    # получаем форматированную дату-время
+    now = datetime.datetime.now()
+    now_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        # получаем форматированную дату-время
-        now = datetime.datetime.now()
-        now_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    # формируем строку лога
+    log_text = f"{now_date_time} | {level} | {module_name}:{func_name} - {log_text}"
 
-        # асинхронная функция вывода лога
-        await aioconsole.aprint(f"{now_date_time} | {level} | {module_name}:{func_name} | {log_text}")
+    # асинхронная функция вывода лога в консоль
+    await aioconsole.aprint(log_text)
+
+    # асинхронная запись лога в файл
+    await write_to_file(filename="log.txt", text=log_text)
+
+
+async def write_to_file(filename, text):
+    # асинхронная запись текста в файл
+
+    async with aiofiles.open(filename, 'a') as f:
+        await f.write(text + '\n')

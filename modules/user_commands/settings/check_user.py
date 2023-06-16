@@ -1,11 +1,9 @@
+from modules.imports import *
+
 '''
 модуль проверяет, есть-ли данный юзер в БД. Если нет, то добавляет новую
 запись в таблицу users с дефолтнами значениями (кроме ids, tg)
 '''
-import datetime
-#
-import modules.user_commands.settings.check_user
-
 
 async def check_user(db_manager, username ,user_id):
 	# проверяем, есть-ли юзер в БД. Если нет - создаём запись в таблице users

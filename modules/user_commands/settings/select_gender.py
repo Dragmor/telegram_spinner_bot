@@ -1,7 +1,4 @@
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.dispatcher import FSMContext
-#
-import modules.user_commands.settings.check_user
+from modules.imports import *
 
 '''
 модуль реализует выбор пола, выводя пользователю список кнопок.

@@ -1,8 +1,4 @@
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.dispatcher import FSMContext
-#
-import modules.user_commands.settings.check_user
-import modules.user_commands.settings.load_commands
+from modules.imports import *
 
 '''
 модуль реализует выбор языка, выводя пользователю список кнопок.

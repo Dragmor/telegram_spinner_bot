@@ -1,6 +1,5 @@
 from modules.imports import *
 
-
 class ChatBot:
     '''класс чат-бота'''
     def __init__(self, token: str, db_conf: str) -> None:
@@ -20,20 +19,16 @@ class ChatBot:
         метод запускается при старте бота. Тут прописываем важные для работы бота
         события (подключение к БД, включение логирования и т.д.), которые должны произойти сразу после старта
         '''
-        # подключаемся к БД
+        # подключаемся к БД (и ждём, пока приконнектимся!)
         await self.db_manager.connect()
 
         # если был передан параметр -logging, то включаем логирование
-        if "-logging" not in sys.argv:
-            # удаляю логгер
-            logger.remove()
-        # если же параметр был передан, то
-        else:
-            # задаём файл для логов (rotation - ограничение размера лога, retention - количество файлов ротации)
-            logger.add(sink="output.log", enqueue=True, level="INFO", diagnose=True, backtrace=True, rotation="10 MB", retention=1)
+        if "-logging" in sys.argv:
+            # записываю лог, и не дожидаясь отработки функции, продолжаю выполнение бота
+            asyncio.get_event_loop().create_task(modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name))
 
-        # записываем лог
-        logger.opt().success("Bot started!")
+            # # эта конструкция ожидает, пока запишется лог, и только тогда продолжает работу бота
+            # await modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name)
 
 
     def register_handlers(self):
@@ -48,18 +43,18 @@ class ChatBot:
         
         # удаляем сообщение /start от юзера в чате
         # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
-        await message.delete()
+        asyncio.get_event_loop().create_task(message.delete())
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
+        asyncio.get_event_loop().create_task(modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message))
         # загружаю команды в меню бота из БД на выбранном юзером языке
-        await modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id'])
+        asyncio.get_event_loop().create_task(modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id']))
         
 
     async def echo(self, message: types.Message):
         # тестовый метод, который обрабатывает все сообщения, которые не были обработаны другими хендлерами
 
         # отвечаю на сообщение юзера эхо-сообщением
-        await message.reply(text=message.text)
+        asyncio.get_event_loop().create_task(message.reply(text=message.text))
 
 
 if __name__ == "__main__":
@@ -74,8 +69,14 @@ if __name__ == "__main__":
     }
     # создаём объект бота
     SpinnerBot = ChatBot(token=os.getenv('TOKEN'), db_conf=db_conf)
-    # запускаем диспетчер
-    executor.start_polling(SpinnerBot.dp, skip_updates=False, on_startup=SpinnerBot.on_startup)
+
+    # # запускаем диспетчер (раньше использовал этот вариант вместо loop)
+    # executor.start_polling(SpinnerBot.dp, skip_updates=False, on_startup=SpinnerBot.on_startup)
+
+    # запускаем цикл для обработки событий бота
+    loop = asyncio.get_event_loop()
+    loop.create_task(executor.start_polling(SpinnerBot.dp, skip_updates=False, on_startup=SpinnerBot.on_startup, on_shutdown=loop.close))
+    loop.run_forever()
 
 
 
