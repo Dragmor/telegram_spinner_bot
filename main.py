@@ -45,7 +45,7 @@ class ChatBot:
         # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
         asyncio.get_event_loop().create_task(message.delete())
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        asyncio.get_event_loop().create_task(modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message))
+        await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
         # загружаю команды в меню бота из БД на выбранном юзером языке
         asyncio.get_event_loop().create_task(modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id']))
         

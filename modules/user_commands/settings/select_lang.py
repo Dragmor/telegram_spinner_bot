@@ -11,6 +11,7 @@ class LangSelector():
         self.title = "💬❔" # заголовок сообщения с кнопками выбора
         # привязываю вызов обработчика 
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("lang"))   
+        self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("page"))
         self.limit = int(limit) # сколько кнопок на одной странице
         self.pages = None
 
@@ -81,7 +82,7 @@ class LangSelector():
         # если была нажата кнопка смены страницы
         if call.data.startswith("page"):
             # создаём новый список кнопок для новой страницы
-            await self.create_buttons(message=call.message, page=current_page, first_launch=False, edit_message_id=call.message.message_id)
+            await self.create_buttons(message=call.message, page=current_page, command_launch=False, edit_message_id=call.message.message_id)
         # Если была выбрана кнопка смены языка
         elif call.data != "current_page":
             lang = call.data.split("==")[-1]

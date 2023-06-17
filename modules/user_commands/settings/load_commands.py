@@ -8,11 +8,17 @@ from modules.imports import *
 
 async def load_commands(parent, user_id) -> None:
     # получаю из БД все команды (фильтруя по ISO и ROLE юзера)
-    data = await parent.db_manager.get_data(query=f'''SELECT c.command, c.description 
+    # тут применяю моржовый оператор, чтобы не делать конструкцию if-else
+    if (data := await parent.db_manager.get_data(query=f'''SELECT c.command, c.description 
                                                      FROM commands AS c 
                                                      JOIN users AS u ON c.role >= u.role
                                                      AND c.iso = u.iso 
-                                                     WHERE u.ids = {user_id}''')
+                                                     WHERE u.ids = {user_id}''')) == None:
+        # если юзера ещё нет в БД, то добавляем кнопки в меню на английском
+        data = await parent.db_manager.get_data(query=f'''SELECT command, description 
+                                                     FROM commands 
+                                                     WHERE iso = "eng" and role = 5''')
+        
     # Список пользовательских команд
     commands = []
     for command in data:
