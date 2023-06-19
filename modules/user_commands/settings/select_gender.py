@@ -1,4 +1,10 @@
-from modules.imports import *
+# модули для телеги
+from aiogram.dispatcher import FSMContext
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+
+# импортируем пакет с командами настроек профиля юзера
+import modules.user_commands.settings as user_settings
+from modules import logger # для логирования
 
 '''
 модуль реализует выбор пола, выводя пользователю список кнопок.
@@ -48,5 +54,6 @@ class GenderSelector():
         # удаляем меню выбора пола
         await call.message.delete()
         await state.finish()
+        
         # проверяем, какие поля ещё не заполнил юзер
-        await modules.user_commands.settings.check_user.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
+        await user_settings.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)

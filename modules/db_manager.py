@@ -1,4 +1,4 @@
-from modules.imports import *
+import aiomysql # асинхронный доступ к БД MySQL
 
 """
 модуль для работы с БД MySQL

@@ -1,4 +1,10 @@
-from modules.imports import *
+# модули для телеги
+from aiogram.dispatcher import FSMContext
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+
+#
+import modules.user_commands.settings as user_settings
+from modules import logger # для логирования
 
 '''
 модуль реализует выбор языка, выводя пользователю список кнопок.
@@ -98,10 +104,10 @@ class LangSelector():
             await state.finish()
 
             # загружаю команды в меню бота из БД на выбранном языке
-            await modules.user_commands.settings.load_commands.load_commands(parent=self.parent, user_id=call['message']['chat']['id'])
+            await user_settings.load_commands(parent=self.parent, user_id=call['message']['chat']['id'])
             
             # проверяем, какие поля ещё не заполнил юзер
-            await modules.user_commands.settings.check_user.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
+            await user_settings.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
             
 
     async def get_pages_count(self) -> None:

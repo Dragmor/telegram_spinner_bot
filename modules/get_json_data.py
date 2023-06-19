@@ -1,4 +1,4 @@
-from modules.imports import *
+import json
 
 '''
 модуль для парсинга .json-файлов

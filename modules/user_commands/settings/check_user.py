@@ -1,4 +1,5 @@
-from modules.imports import *
+import datetime # для работы с текущей датой (например, для записи даты регистрации юзера)
+
 
 '''
 модуль проверяет, есть-ли данный юзер в БД. Если нет, то добавляет новую
@@ -13,7 +14,7 @@ async def check_user(db_manager, username:str, user_id:int) -> bool:
 
 		# если нет такого юзера, то добавляем его (с дефолтными параметрами)
 		await db_manager.write_data(query=f'''INSERT INTO users 
-											(ids, tg, iso, role, age, gender, lang, country, ca, cl, cr, cc, reg_date) 
+											(ids, tg, iso, role, year_of_birth, gender, lang, country, ca, cl, cr, cc, reg_date) 
 											VALUES ({user_id}, '{username}', 'eng', '5', '0', '0', '0', '0', '0', '0', '0', '0', {reg_date})''')
 		return False
 	return True
@@ -23,7 +24,7 @@ async def check_user_data(parent, user_id:int, message) -> bool:
 	# язык мы не проверяем, т.к. при регистрации по дефолту выставляется eng
 
 	# проверяем, есть-ли данный юзер в БД. Если нет - добавляем
-	if await modules.user_commands.settings.check_user.check_user(db_manager=parent.db_manager, username=message['from']['username'], user_id=user_id) == False:
+	if await check_user(db_manager=parent.db_manager, username=message['from']['username'], user_id=user_id) == False:
 		# выводим кнопки для выбора языка
 		await parent.lang_selector.create_buttons(message=message, command_launch=False)
 		return False
@@ -31,6 +32,11 @@ async def check_user_data(parent, user_id:int, message) -> bool:
 	# проверяем, выбран-ли пол юзера
 	if await parent.db_manager.get_data(query=f"SELECT gender FROM users WHERE ids = {user_id}") == ((0,),):
 		await parent.gender_selector.create_buttons(message=message, command_launch=False)
+		return False
+
+	# проверяем, выбран-ли возраст юзера
+	if await parent.db_manager.get_data(query=f"SELECT year_of_birth FROM users WHERE ids = {user_id}") == ((0,),):
+		await parent.age_selector.create_buttons(message=message, command_launch=False)
 		return False
 
 	# если все поля заполнены, то возвращает True

@@ -1,4 +1,5 @@
-from modules.imports import *
+from modules import logger # для логирования
+from aiogram import types
 
 '''
 метод загружает в бота команды из БД (в кнопку МЕНЮ слева от поля ввода сообщения)

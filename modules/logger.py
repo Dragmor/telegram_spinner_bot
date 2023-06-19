@@ -1,4 +1,6 @@
-from modules.imports import *
+import aioconsole
+import aiofiles
+import datetime
 
 """
 для асинхронного ведения логов.

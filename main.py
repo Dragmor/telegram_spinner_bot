@@ -1,16 +1,31 @@
-from modules.imports import *
+# модули для телеги
+from aiogram import types, Bot, Dispatcher
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.utils import executor
+
+#
+import asyncio # асинхронность
+import os # для извлечения из переменных окружения токена и других переменных
+import sys # для полученния переданных параметров при запуске скрипта
+
+# самописные модули
+import modules.user_commands.settings as user_settings
+from modules import get_json_data, db_manager, write_to_log, currentframe
 
 class ChatBot:
     '''класс чат-бота'''
     def __init__(self, token: str, db_conf: str) -> None:
         self.bot = Bot(token=token, parse_mode=types.ParseMode.HTML)
         self.dp = Dispatcher(self.bot, storage=MemoryStorage())
-        self.db_manager = modules.db_manager.DataBaseManager(db_conf)
+        self.db_manager = db_manager.DataBaseManager(db_conf)
 
         # объект кнопок выбора языка
-        self.lang_selector = modules.user_commands.settings.select_lang.LangSelector(parent=self, limit=modules.get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))
+        self.lang_selector = user_settings.LangSelector(parent=self, limit=get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))
         # объект кнопок выбора пола
-        self.gender_selector = modules.user_commands.settings.select_gender.GenderSelector(parent=self)
+        self.gender_selector = user_settings.GenderSelector(parent=self)
+        #объект выбора возраста
+        self.age_selector = user_settings.AgeSelector(parent=self)
+
         self.register_handlers() # биндим команды
 
 
@@ -25,7 +40,7 @@ class ChatBot:
         # если был передан параметр -logging, то включаем логирование
         if "-logging" in sys.argv:
             # записываю лог, и не дожидаясь отработки функции, продолжаю выполнение бота
-            asyncio.get_event_loop().create_task(modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name))
+            asyncio.get_event_loop().create_task(write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=currentframe().f_code.co_name))
 
             # # эта конструкция ожидает, пока запишется лог, и только тогда продолжает работу бота
             # await modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name)
@@ -36,6 +51,7 @@ class ChatBot:
         self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
+        self.dp.register_message_handler(self.age_selector.create_buttons, commands=['age'])
         self.dp.register_message_handler(self.echo) # получает ВСЕ сообщения, не уловленные предыдущими хендлерами
         
     async def handle_start(self, message: types.Message) -> None:
@@ -45,9 +61,9 @@ class ChatBot:
         # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
         asyncio.get_event_loop().create_task(message.delete())
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        await modules.user_commands.settings.check_user.check_user_data(parent=self, user_id=message['from']['id'], message=message)
+        await user_settings.check_user_data(parent=self, user_id=message['from']['id'], message=message)
         # загружаю команды в меню бота из БД на выбранном юзером языке
-        asyncio.get_event_loop().create_task(modules.user_commands.settings.load_commands.load_commands(parent=self, user_id=message['from']['id']))
+        asyncio.get_event_loop().create_task(user_settings.load_commands(parent=self, user_id=message['from']['id']))
         
 
     async def echo(self, message: types.Message):
