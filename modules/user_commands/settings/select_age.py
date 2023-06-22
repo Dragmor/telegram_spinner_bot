@@ -15,9 +15,14 @@ from modules.user_commands.settings import check_user_data
 
 class AgeSelector():
     def __init__(self, parent) -> None:
-        self.parent = parent     
-        self.title = "AD3reqr3dq@!df" # заголовок сообщения с кнопками
-        self.diapason_step = 10 # шаг для цикла диапазона возрастов
+        self.parent = parent
+        # минимальный возраст, максимальный(+шаг), шаг 
+        # присваиваем дефолтные значения. После запуска они будут перезаписаны значениями из БД
+        # (присваиваем сюда значения настроек из БД при создании объекта в классе ChatBot)
+        self.min_age = 6
+        self.max_age = 65
+        self.age_step = 10
+        #
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("diapason"))
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("age"))
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("back"))
@@ -33,8 +38,9 @@ class AgeSelector():
         
         # создаём для начала клавиши выбора диапазона для возраста
         keyboard = InlineKeyboardMarkup(row_width=1)
-        # минимальный возраст, максимальный(+шаг), шаг
-        for diapason in range(6, 57, self.diapason_step):
+        
+        # создаём кнопки возрастов
+        for diapason in range(self.min_age, self.max_age, self.age_step):
             callback_data = f"diapason=={diapason}"
             # присваиваем кнопке текст
             button = InlineKeyboardButton(text=f"{diapason}-{diapason+9}", callback_data=callback_data)
@@ -43,8 +49,12 @@ class AgeSelector():
         if back_button:
             await self.parent.bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.message_id, reply_markup=keyboard)
         else:
+            # заголовок сообщения с кнопками
+            title = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
+                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
+                                                                    WHERE t.place = "age"''')
             # отправляем юзеру меню выбора диапазона возраста
-            await message.answer(text=self.title, reply_markup=keyboard)
+            await message.answer(text=title[0][0], reply_markup=keyboard)
 
             
 
@@ -60,13 +70,17 @@ class AgeSelector():
             # меняю клавиатуру
             keyboard = InlineKeyboardMarkup(row_width=1)
             # создаю кнопки для выбора возраста
-            for age in range(diapason, int(diapason+self.diapason_step)):
+            for age in range(diapason, int(diapason+self.age_step)):
                 callback_data = f"age=={age}"
                 # присваиваем кнопке конкретный возраст для выбора
                 button = InlineKeyboardButton(text=f"{age}", callback_data=callback_data)
                 keyboard.add(button)
             # создаём кнопку "назад"
-            keyboard.row(InlineKeyboardButton(text="⬅️", callback_data=f"back"))
+            # заголовок сообщения с кнопками
+            button_text = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
+                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
+                                                                    WHERE t.place = "back_button"''')
+            keyboard.row(InlineKeyboardButton(text=button_text[0][0], callback_data=f"back"))
             await self.parent.bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=keyboard)
         
         # если была нажата кнопка назад

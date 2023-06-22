@@ -14,8 +14,8 @@ async def check_user(db_manager, username:str, user_id:int) -> bool:
 
 		# если нет такого юзера, то добавляем его (с дефолтными параметрами)
 		await db_manager.write_data(query=f'''INSERT INTO users 
-											(ids, tg, iso, role, year_of_birth, gender, lang, country, ca, cl, cr, cc, reg_date) 
-											VALUES ({user_id}, '{username}', 'eng', '5', '0', '0', '0', '0', '0', '0', '0', '0', {reg_date})''')
+											(ids, tg, lang_iso, role, year_of_birth, gender, user_lang, country, ca, cl, cr, cc, reg_date) 
+											VALUES ({user_id}, '{username}', '1', '5', '0', '0', '0', '0', '0', '0', '0', '0', {reg_date})''')
 		return False
 	return True
 

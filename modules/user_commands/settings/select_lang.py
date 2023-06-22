@@ -12,13 +12,12 @@ from modules import logger # для логирования
 '''
 
 class LangSelector():
-    def __init__(self, parent, limit: int) -> None:
+    def __init__(self, parent: int) -> None:
         self.parent = parent     
-        self.title = "💬❔" # заголовок сообщения с кнопками выбора
         # привязываю вызов обработчика 
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("lang"))   
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("page"))
-        self.limit = int(limit) # сколько кнопок на одной странице
+        self.limit = 6 # сколько кнопок на одной странице (значение присваивается в классе ChatBot в on_startup)
         self.pages = None
 
     async def create_buttons(self, message, page=0, command_launch=True, edit_message_id=None) -> None:
@@ -33,13 +32,13 @@ class LangSelector():
             await self.get_pages_count()        
         # создаём список кнопок для выбора языка
         offset = current_page * self.limit
-        # извлекаем из БД флаг, название языка и ISO
-        result = await self.parent.db_manager.get_data(query=f"SELECT flag, name, iso FROM langs LIMIT {self.limit} OFFSET {offset}")
+        # извлекаем из БД флаг, название языка и id
+        result = await self.parent.db_manager.get_data(query=f"SELECT id, flag, name FROM langs LIMIT {self.limit} OFFSET {offset}")
         # проверяем, есть ли извлечённые данные из БД
         if result:
             keyboard = InlineKeyboardMarkup(row_width=1)
-            for flag, name, iso in result:
-                callback_data = f"lang=={iso}"
+            for lang_id, flag, name in result:
+                callback_data = f"lang=={lang_id}"
                 # присваиваем кнопке текст: флаг и название языка
                 button = InlineKeyboardButton(text=f"{flag} {name}", callback_data=callback_data)
                 keyboard.add(button)
@@ -63,7 +62,12 @@ class LangSelector():
                 except:
                     await self.parent.bot.delete_message(chat_id=message.chat.id, message_id=edit_message_id)
             else:
-                await message.answer(text=self.title, reply_markup=keyboard)
+                # заголовок сообщения с кнопками
+                title = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
+                                                                        JOIN users AS u ON t.lang_iso = u.lang_iso
+                                                                        WHERE t.place = "lang"''')
+                # отправляем юзеру сообщение с кнопками
+                await message.answer(text=title[0][0], reply_markup=keyboard)
 
 
     async def handle(self, call: CallbackQuery, state: FSMContext) -> None:
@@ -91,14 +95,14 @@ class LangSelector():
             await self.create_buttons(message=call.message, page=current_page, command_launch=False, edit_message_id=call.message.message_id)
         # Если была выбрана кнопка смены языка
         elif call.data != "current_page":
-            lang = call.data.split("==")[-1]
+            lang_id = call.data.split("==")[-1]
             # тут выводится инфо о том, какой язык был выбран (нужно, чтобы текст был на том языке, который выбран)
             # отправляем уведомление о выбранном языке
             # await call.answer(f"{lang}")
             # меняем текст сообщения
-            # await self.parent.bot.edit_message_text(text=f"You selected language: {lang}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+            # await self.parent.bot.edit_message_text(text=f"You selected language: {lang_id}", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
             # вношу iso выбранного языка в БД юзеру
-            await self.parent.db_manager.write_data(query=f"UPDATE users SET iso = '{lang}' WHERE ids = {call['from']['id']}")
+            await self.parent.db_manager.write_data(query=f"UPDATE users SET lang_iso = '{lang_id}' WHERE ids = {call['from']['id']}")
             # удаляем сообщение с кнопками после выбора языка
             await call.message.delete()
             await state.finish()

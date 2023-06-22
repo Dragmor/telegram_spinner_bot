@@ -10,7 +10,7 @@ import sys # для полученния переданных параметро
 
 # самописные модули
 import modules.user_commands.settings as user_settings
-from modules import get_json_data, db_manager, write_to_log, currentframe
+from modules import db_manager, write_to_log, currentframe, settings_loader
 
 class ChatBot:
     '''класс чат-бота'''
@@ -20,7 +20,7 @@ class ChatBot:
         self.db_manager = db_manager.DataBaseManager(db_conf)
 
         # объект кнопок выбора языка
-        self.lang_selector = user_settings.LangSelector(parent=self, limit=get_json_data.get_data(fname="./settings/settings.json", data="lang_buttons_in_page"))
+        self.lang_selector = user_settings.LangSelector(parent=self)
         # объект кнопок выбора пола
         self.gender_selector = user_settings.GenderSelector(parent=self)
         #объект выбора возраста
@@ -36,6 +36,14 @@ class ChatBot:
         '''
         # подключаемся к БД (и ждём, пока приконнектимся!)
         await self.db_manager.connect()
+
+        # извлекаем настройки из БД для объектов
+        # кол-во языков на 1 странице
+        if (temp:=await settings_loader.get_value(self.db_manager, "langs_on_page")) != None: self.lang_selector.limit = temp
+        # минимальный возраст, максимальный(+шаг), шаг (для объекта выбора возраста)
+        if (temp:=await settings_loader.get_value(self.db_manager, "min_age")) != None: self.age_selector.min_age = temp
+        if (temp:=await settings_loader.get_value(self.db_manager, "max_age")) != None: self.age_selector.max_age = temp
+        if (temp:=await settings_loader.get_value(self.db_manager, "age_step")) != None: self.age_selector.age_step = temp
 
         # если был передан параметр -logging, то включаем логирование
         if "-logging" in sys.argv:

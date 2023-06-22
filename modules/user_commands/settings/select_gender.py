@@ -14,7 +14,6 @@ from modules import logger # для логирования
 class GenderSelector():
     def __init__(self, parent) -> None:
         self.parent = parent     
-        self.title = "👨❓👱‍♀️" # заголовок сообщения с кнопками 
         self.parent.dp.register_callback_query_handler(self.handle, lambda c: c.data.startswith("gender"))  
 
     async def create_buttons(self, message, command_launch=True) -> None:
@@ -25,10 +24,10 @@ class GenderSelector():
             # удаляем сообщение от юзера с командой
             await message.delete()
         
-        # получаем iso юзера и извлекаем название гендера на этом языке
+        # получаем lang_iso юзера и извлекаем название гендера на этом языке
         result = await self.parent.db_manager.get_data(query=f'''SELECT g.flag, g.name, g.gender 
                                                                  FROM genders AS g 
-                                                                 JOIN users AS u ON g.iso = u.iso 
+                                                                 JOIN users AS u ON g.lang_iso = u.lang_iso 
                                                                  WHERE u.ids = {message['chat']['id']}''')
         # проверяем, есть ли извлечённые данные из БД
         if result:
@@ -39,8 +38,12 @@ class GenderSelector():
                 button = InlineKeyboardButton(text=f"{flag} {name}", callback_data=callback_data)
                 keyboard.add(button)
 
+            # заголовок сообщения с кнопками
+            title = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
+                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
+                                                                    WHERE t.place = "gender"''')
             # отправляем юзеру меню выбора пола
-            await message.answer(text=self.title, reply_markup=keyboard)
+            await message.answer(text=title[0][0], reply_markup=keyboard)
 
             
 
