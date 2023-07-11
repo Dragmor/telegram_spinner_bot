@@ -17,29 +17,34 @@ class DataBaseManager():
         # подключаюсь к БД (создаю соединение)
         self.pool = await aiomysql.create_pool(**self.db_conf)
 
-    async def get_data(self, query: str) ->  tuple:
-        # метод выполняет запрос, и возвращает кортеж кортежей извлечённых данных
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query)
-                result = await cur.fetchall()
-                # проверяем, были ли извлечены какие-либо данные (если нет, то возвращает None)
-                if len(result) == 0:
-                    return None
-        # если же были извлечены данные, отдаём их
-        return result
-        
-
-    async def write_data(self, query: str):
-        # метод записывает в БД данные, переданные запросом SQL
-        # используем менеджер контекста, чтобы не забыть закрыть курсор
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(query)
-            await conn.commit()
-
     async def close(self):
         # метод закрывает соединение с БД
         if self.pool:
             self.pool.close()
             await self.pool.wait_closed()
+
+    async def get_data(self, query: str) -> tuple:
+        # метод выполняет запрос и возвращает кортеж кортежей извлечённых данных
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
+                result = await cur.fetchall()
+                # проверяем, были ли извлечены какие-либо данные (если нет, то возвращает None)
+
+                # # FOR DEBUG
+                # print(query)
+                # print(result)
+                
+                if len(result) == 0:
+                    return None
+            # если же были извлечены данные, отдаём их
+            return result
+
+    async def write_data(self, query: str):
+        # метод записывает в БД данные, переданные запросом SQL
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
+            await conn.commit()
+
+

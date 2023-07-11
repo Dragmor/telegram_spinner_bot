@@ -39,9 +39,9 @@ class GenderSelector():
                 keyboard.add(button)
 
             # заголовок сообщения с кнопками
-            title = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
-                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
-                                                                    WHERE t.place = "gender"''')
+            title = await self.parent.db_manager.get_data(query=f'''SELECT text FROM texts
+                                                            WHERE place = "gender" AND lang_iso = 
+                                                            (SELECT lang_iso FROM users WHERE ids = {message['chat']['id']})''')
             # отправляем юзеру меню выбора пола
             await message.answer(text=title[0][0], reply_markup=keyboard)
 
@@ -57,6 +57,9 @@ class GenderSelector():
         # удаляем меню выбора пола
         await call.message.delete()
         await state.finish()
+
+        # убираем значок таймера с нажатой кнопки
+        await call.answer()
         
         # проверяем, какие поля ещё не заполнил юзер
-        await user_settings.check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
+        await user_settings.check_user_data(parent=self.parent, message=call.message)

@@ -25,6 +25,12 @@ class ChatBot:
         self.gender_selector = user_settings.GenderSelector(parent=self)
         #объект выбора возраста
         self.age_selector = user_settings.AgeSelector(parent=self)
+        # объект выбора континента
+        self.location_selector = user_settings.LocationSelector(parent=self)
+        # объект выбора региона
+        self.region_selector = user_settings.RegionSelector(parent=self)
+        # объект выбора страны
+        self.country_selector = user_settings.CountrySelector(parent=self)
 
         self.register_handlers() # биндим команды
 
@@ -45,13 +51,10 @@ class ChatBot:
         if (temp:=await settings_loader.get_value(self.db_manager, "max_age")) != None: self.age_selector.max_age = temp
         if (temp:=await settings_loader.get_value(self.db_manager, "age_step")) != None: self.age_selector.age_step = temp
 
-        # если был передан параметр -logging, то включаем логирование
-        if "-logging" in sys.argv:
-            # записываю лог, и не дожидаясь отработки функции, продолжаю выполнение бота
-            asyncio.get_event_loop().create_task(write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=currentframe().f_code.co_name))
-
-            # # эта конструкция ожидает, пока запишется лог, и только тогда продолжает работу бота
-            # await modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name)
+        # записываю лог, и не дожидаясь отработки функции, продолжаю выполнение бота
+        asyncio.get_event_loop().create_task(write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=currentframe().f_code.co_name))
+        # # эта конструкция ожидает, пока запишется лог, и только тогда продолжает работу бота
+        # await modules.logger.write_to_log(logging=True, level="SUCCESS", log_text="Bot started!", module_name=__name__, func_name=inspect.currentframe().f_code.co_name)
 
 
     def register_handlers(self):
@@ -60,6 +63,9 @@ class ChatBot:
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
         self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
         self.dp.register_message_handler(self.age_selector.create_buttons, commands=['age'])
+        self.dp.register_message_handler(self.location_selector.create_buttons, commands=['location'])
+        self.dp.register_message_handler(self.region_selector.create_buttons, commands=['region'])
+        self.dp.register_message_handler(self.country_selector.create_buttons, commands=['country'])
         self.dp.register_message_handler(self.echo) # получает ВСЕ сообщения, не уловленные предыдущими хендлерами
         
     async def handle_start(self, message: types.Message) -> None:
@@ -69,7 +75,7 @@ class ChatBot:
         # тут мы используем create_task() чтобы handle_start() не блокировался на выполнении каждой задачи (асинхронность)
         asyncio.get_event_loop().create_task(message.delete())
         # проверяем, какие данные о юзере ещё не заполнены, и выводим ему сообщения для их выбора
-        await user_settings.check_user_data(parent=self, user_id=message['from']['id'], message=message)
+        await user_settings.check_user_data(parent=self, message=message)
         # загружаю команды в меню бота из БД на выбранном юзером языке
         asyncio.get_event_loop().create_task(user_settings.load_commands(parent=self, user_id=message['from']['id']))
         
@@ -106,34 +112,7 @@ if __name__ == "__main__":
 
 """
 Logger method
-logger.trace()
-logger.debug()
-logger.info()
-logger.success()
-logger.warning()
-logger.error()
-logger.critical()
-
-# Изменение аватарки бота
-with open('new_avatar.jpg', 'rb') as f:
-    await bot.set_avatar(photo=f)
-
-# Изменение описания бота
-await bot.set_my_commands(commands=[
-    types.BotCommand(command='start', description='Start the bot'),
-    types.BotCommand(command='help', description='Get help')
-])
-
-# Изменение логотипа бота
-with open('new_logo.jpg', 'rb') as f:
-    await bot.set_photo(photo=f)
-
-# Изменение имени бота
-await bot.set_name(name='New Bot Name')
-
-# изменяет описание профиля бота.
-set_chat_description(chat_id: Union[int, str], description: str)
-
+trace, debug, info, success, warning, error, critical
 
 # await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id) # удаляет любое сообщение по его id и id чата
 # await message.delete() # удаляет сообщение message

@@ -50,9 +50,9 @@ class AgeSelector():
             await self.parent.bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.message_id, reply_markup=keyboard)
         else:
             # заголовок сообщения с кнопками
-            title = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
-                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
-                                                                    WHERE t.place = "age"''')
+            title = await self.parent.db_manager.get_data(query=f'''SELECT text FROM texts
+                                                                    WHERE place = "age" AND lang_iso = 
+                                                                    (SELECT lang_iso FROM users WHERE ids = {message['chat']['id']})''')
             # отправляем юзеру меню выбора диапазона возраста
             await message.answer(text=title[0][0], reply_markup=keyboard)
 
@@ -77,11 +77,12 @@ class AgeSelector():
                 keyboard.add(button)
             # создаём кнопку "назад"
             # заголовок сообщения с кнопками
-            button_text = await self.parent.db_manager.get_data(query=f'''SELECT t.text FROM texts AS t
-                                                                    JOIN users AS u ON t.lang_iso = u.lang_iso
-                                                                    WHERE t.place = "back_button"''')
+            button_text = await self.parent.db_manager.get_data(query=f'''SELECT text FROM texts
+                                                        WHERE place = "back_button" AND lang_iso = 
+                                                        (SELECT lang_iso FROM users WHERE ids = {call['from']['id']})''')
+
             keyboard.row(InlineKeyboardButton(text=button_text[0][0], callback_data=f"back"))
-            await self.parent.bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=keyboard)
+            await self.parent.bot.edit_message_reply_markup(chat_id=call['from']['id'], message_id=call.message.message_id, reply_markup=keyboard)
         
         # если была нажата кнопка назад
         elif call.data=="back":
@@ -101,5 +102,8 @@ class AgeSelector():
             await call.message.delete()
             await state.finish()
 
+            # убираем значок таймера с нажатой кнопки
+            await call.answer()
+
             # проверяем, какие поля ещё не заполнил юзер
-            await check_user_data(parent=self.parent, user_id=call['message']['chat']['id'], message=call.message)
+            await check_user_data(parent=self.parent, message=call.message)
