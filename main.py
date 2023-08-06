@@ -61,11 +61,13 @@ class ChatBot:
         # создаём бинды обработчиков команд
         self.dp.register_message_handler(self.handle_start, commands=['start'])
         self.dp.register_message_handler(self.lang_selector.create_buttons, commands=['lang'])
-        self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
-        self.dp.register_message_handler(self.age_selector.create_buttons, commands=['age'])
-        self.dp.register_message_handler(self.location_selector.create_buttons, commands=['location'])
-        self.dp.register_message_handler(self.region_selector.create_buttons, commands=['region'])
-        self.dp.register_message_handler(self.country_selector.create_buttons, commands=['country'])
+        
+        # эти хендлеры для проверки работоспособности функций
+        # self.dp.register_message_handler(self.gender_selector.create_buttons, commands=['gender'])
+        # self.dp.register_message_handler(self.age_selector.create_buttons, commands=['age'])
+        # self.dp.register_message_handler(self.location_selector.create_buttons, commands=['location'])
+        # self.dp.register_message_handler(self.region_selector.create_buttons, commands=['region'])
+        # self.dp.register_message_handler(self.country_selector.create_buttons, commands=['country'])
         self.dp.register_message_handler(self.echo) # получает ВСЕ сообщения, не уловленные предыдущими хендлерами
         
     async def handle_start(self, message: types.Message) -> None:
